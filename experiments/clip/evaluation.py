@@ -18,22 +18,27 @@ from tools.misc import *
 from tools.gen_text_embedding import get_saparate_text_embedding
 from models.adv_program import VisualPrompt
 from cfg import *
-from models.clip_new import clip_img_preprocessing
-from algorithms.attack import network,attack_pgd
-
+from models.Custom_CLIP import clip_img_preprocessing,CustomCLIP
+from algorithms.attack import attack_pgd
 if __name__ == '__main__':
     p = argparse.ArgumentParser()
     p.add_argument('--seed', type=int, default=7)
     p.add_argument('--dataset', choices=["cifar10", "cifar100", "abide", "dtd", "flowers102", "ucf101", "food101", "gtsrb", "svhn", "eurosat", "oxfordpets", "stanfordcars", "sun397"], default='cifar10')
+    
+    
+    ################# attack settings ###################
     p.add_argument('--n-restarts', type=int, default=1)
-    p.add_argument('--attack-iters', type=int, default=10)
+    p.add_argument('--attack-iters', type=int, default=2)
     p.add_argument('--attack-eps', default=8., type=float,
                         help='attack constraint for training (default: 8/255)')
     p.add_argument('--attack_lr', default=2., type=float,
                         help='attack learning rate (default: 2./255). Note this parameter is for training only. The attack lr is always set to attack_eps / 4 when evaluating.')    
-    p.add_argument('--lp', type=str, choices=['l2', 'linf'], default='l2')
+    p.add_argument('--lp', type=str, choices=['l2', 'linf'], default='linf')
     p.add_argument('--visual-prompter', type=str,default=None)
     p.add_argument('--attack-methods', type=str, choices=['pgd', 'cw'],default='pgd')
+
+    ################# text prompting settings ###################
+    p.add_argument('--cnt-prompt', type=int, default=0)
     args = p.parse_args()
 
     device = torch.device("cuda:0") if torch.cuda.is_available() else torch.device("cpu")
@@ -58,13 +63,15 @@ if __name__ == '__main__':
     convert_models_to_fp32(model)
     model.eval()
     model.requires_grad_(False)
+
     preprocess = transforms.Compose([
         transforms.ToTensor(),
     ])
-    templates = [DEFAULT_TEMPLATE]
+    prefix = DEFAULT_TEMPLATE
     loaders, class_names = prepare_clip_data(dataset=args.dataset, data_path=data_path, preprocess=preprocess)
-    txt_emb = torch.cat(get_saparate_text_embedding(class_names, templates, model))
-    emb_names = np.array([f"T{i//len(class_names)} {class_names[i%len(class_names)]}" for i in range(txt_emb.size(0))])
+    model = CustomCLIP(args,class_names,model,prefix=prefix)   
+    # txt_emb = torch.cat(get_saparate_text_embedding(class_names, templates, model))
+    # emb_names = np.array([f"T{i//len(class_names)} {class_names[i%len(class_names)]}" for i in range(txt_emb.size(0))])
 
     if args.visual_prompter is not None:
         visual_prompt = VisualPrompt(224, 30).to(device)
@@ -79,7 +86,7 @@ if __name__ == '__main__':
     TAs = AverageMeter()
     for x, y in pbar:
         x, y = x.to(device), y.to(device)
-        delta = attack_pgd(visual_prompt,model,txt_emb,x,y,eps=args.attack_eps,alpha=args.attack_lr,attack_iters=args.attack_iters,n_restarts=args.n_restarts)
+        delta = attack_pgd(visual_prompt,model,x,y,eps=args.attack_eps,alpha=args.attack_lr,attack_iters=args.attack_iters,n_restarts=args.n_restarts)
         adv_images = clip_img_preprocessing(x + delta)
         images = clip_img_preprocessing(x)
         if args.visual_prompter is not None:
@@ -88,8 +95,8 @@ if __name__ == '__main__':
         else:
             prompted_adv_images = adv_images
             prompted_images = images
-        adv_output = network(model,prompted_adv_images,txt_emb)
-        output = network(model,prompted_images,txt_emb)
+        adv_output = model(prompted_adv_images)
+        output = model(prompted_images)
         adv_loss = F.cross_entropy(adv_output,y)
         loss = F.cross_entropy(output,y)
         adv_output = adv_output.float()

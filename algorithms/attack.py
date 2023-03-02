@@ -1,17 +1,11 @@
 import torch
 import torch.nn.functional as F
-from models.clip_new import clip_img_preprocessing
+from models.Custom_CLIP import clip_img_preprocessing
 lower_limit, upper_limit = 0, 1
 
 def sign(grad):
     grad_sign = torch.sign(grad)
     return grad_sign
-
-def network(model,x,text_emb):
-    x_emb = model.encode_image(x)
-    x_emb = x_emb / x_emb.norm(dim=-1,keepdim=True)
-    logits = model.logit_scale.exp() * x_emb @ text_emb.t()
-    return logits
 
 def clamp(X, l, u, cuda=True):
     if type(l) is not torch.Tensor:
@@ -26,7 +20,7 @@ def clamp(X, l, u, cuda=True):
             u = torch.FloatTensor(1).fill_(u)
     return torch.max(torch.min(X, u), l)
 
-def attack_pgd(prompter, model,text_embedding, X, y,eps,alpha,attack_iters,n_restarts,rs = True, verbose=False,
+def attack_pgd(prompter, model, X, y,eps,alpha,attack_iters,n_restarts,rs = True, verbose=False,
                linf_proj=True, l2_proj=False, l2_grad_update=False, cuda=True):
     if n_restarts > 1 and not rs:
         raise ValueError('no random step and n_restarts > 1!')
@@ -53,7 +47,7 @@ def attack_pgd(prompter, model,text_embedding, X, y,eps,alpha,attack_iters,n_res
             else:
                 prompted_images = _images
 
-            output = network(model,prompted_images,text_embedding)
+            output = model(_images)
             loss = F.cross_entropy(output, y)
             loss.backward()
             grad = delta.grad.detach()
@@ -83,7 +77,7 @@ def attack_pgd(prompter, model,text_embedding, X, y,eps,alpha,attack_iters,n_res
             else:
                 prompted_images = _images
 
-            output = network(model,prompted_images,text_embedding)
+            output = model(prompted_images)
             all_loss = F.cross_entropy(output, y, reduction='none')  # .detach()  # prevents a memory leak
             max_delta[all_loss >= max_loss] = delta.detach()[all_loss >= max_loss]
 
