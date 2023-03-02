@@ -79,7 +79,7 @@ if __name__ == '__main__':
     else:
         visual_prompt = None
 
-    pbar = tqdm(loaders['test'], total=len(loaders['test']), desc=f" Testing", ncols=100)    
+    pbar = tqdm(loaders['test'], total=len(loaders['test']), desc=f" Testing", ncols=160)    
     losses = AverageMeter()
     adv_losses = AverageMeter()
     RAs = AverageMeter()

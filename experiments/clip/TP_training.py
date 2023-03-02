@@ -28,7 +28,7 @@ from algorithms.attack import attack_pgd
 
 
 def train(visual_prompt,model,loaders,epoch,optimizer,scheduler,args):
-    pbar = tqdm(loaders['train'], total=len(loaders['train']), desc=f"Epo {epoch} Training", ncols=100)    
+    pbar = tqdm(loaders['train'], total=len(loaders['train']), desc=f"Epo {epoch} Training", ncols=160)    
     losses = AverageMeter()
     adv_losses = AverageMeter()
     RAs = AverageMeter()
@@ -70,7 +70,7 @@ def train(visual_prompt,model,loaders,epoch,optimizer,scheduler,args):
 
 
 def test(visual_prompt,model,loaders,epoch,args):
-    pbar = tqdm(loaders['test'], total=len(loaders['test']), desc=f"Epo {epoch} Testing", ncols=100)    
+    pbar = tqdm(loaders['test'], total=len(loaders['test']), desc=f"Epo {epoch} Testing", ncols=160)    
     losses = AverageMeter()
     adv_losses = AverageMeter()
     RAs = AverageMeter()
