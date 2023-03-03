@@ -38,7 +38,7 @@ if __name__ == '__main__':
     p.add_argument('--attack-methods', type=str, choices=['pgd', 'cw'],default='pgd')
 
     ################# text prompting settings ###################
-    p.add_argument('--cnt-prompt', type=int, default=0)
+    p.add_argument('--cnt-prompt', type=int, default=10)
     args = p.parse_args()
 
     device = torch.device("cuda:0") if torch.cuda.is_available() else torch.device("cpu")

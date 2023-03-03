@@ -31,6 +31,7 @@ def train(visual_prompt,model,loaders,epoch,optimizer,scheduler,args):
     pbar = tqdm(loaders['train'], total=len(loaders['train']), desc=f"Epo {epoch} Training", ncols=160)    
     losses = AverageMeter()
     adv_losses = AverageMeter()
+    total_losses = AverageMeter()
     RAs = AverageMeter()
     TAs = AverageMeter()
     for x, y in pbar:
@@ -49,20 +50,24 @@ def train(visual_prompt,model,loaders,epoch,optimizer,scheduler,args):
         output = model(prompted_images)
         adv_loss = F.cross_entropy(adv_output,y)
         loss = F.cross_entropy(output,y)
-        adv_loss.backward()
+        total_loss = args.lamb*adv_loss+loss
+        total_loss.backward()
         optimizer.step()
         scheduler.step()
         adv_output = adv_output.float()
         output = output.float()
         adv_loss = adv_loss.float()
         loss = loss.float()
+        total_loss = total_loss.float()
+
         TA = accuracy(output.data, y)[0]
         RA = accuracy(adv_output.data, y)[0]
         losses.update(loss.item(), adv_images.size(0))
         adv_losses.update(adv_loss.item(), adv_images.size(0))
+        total_losses.update(total_loss.item(), adv_images.size(0))
         TAs.update(TA.item(), adv_images.size(0))
         RAs.update(RA.item(), adv_images.size(0))
-        pbar.set_postfix_str(f"TA {TAs.avg:.2f}%, RA {RAs.avg:.2f}%, loss {losses.avg:.2f}, adv_loss {adv_losses.avg:.2f}")
+        pbar.set_postfix_str(f"TA {TAs.avg:.2f}%, RA {RAs.avg:.2f}%, loss {losses.avg:.2f}, adv_loss {adv_losses.avg:.2f}, total_loss {total_losses.avg:.2f}")
     return TAs.avg,RAs.avg
 
 
@@ -73,6 +78,7 @@ def test(visual_prompt,model,loaders,epoch,args):
     pbar = tqdm(loaders['test'], total=len(loaders['test']), desc=f"Epo {epoch} Testing", ncols=160)    
     losses = AverageMeter()
     adv_losses = AverageMeter()
+
     RAs = AverageMeter()
     TAs = AverageMeter()
     for x, y in pbar:
@@ -94,7 +100,7 @@ def test(visual_prompt,model,loaders,epoch,args):
         output = output.float()
         adv_loss = adv_loss.float()
         loss = loss.float()
-
+    
         TA = accuracy(output.data, y)[0]
         RA = accuracy(adv_output.data, y)[0]
         losses.update(loss.item(), adv_images.size(0))
@@ -115,7 +121,7 @@ if __name__ == '__main__':
     ################# attack settings ###################
     p.add_argument('--n-restarts', type=int, default=1)
     p.add_argument('--attack-iters', type=int, default=2)
-    p.add_argument('--attack-eps', default=8., type=float,
+    p.add_argument('--attack-eps', default=1., type=float,
                         help='attack constraint for training (default: 8/255)')
     p.add_argument('--attack_lr', default=2., type=float,
                         help='attack learning rate (default: 2./255). Note this parameter is for training only. The attack lr is always set to attack_eps / 4 when evaluating.')    
@@ -135,7 +141,8 @@ if __name__ == '__main__':
     p.add_argument('--weight_decay', default=5e-4,
                         type=float, help='weight decay')
     p.add_argument('--epochs', type=int,
-                        default=200, help='epochs') 
+                        default=50, help='epochs') 
+    p.add_argument('--lamb', type=float,default=0.1)
     args = p.parse_args()
     device = torch.device("cuda:0") if torch.cuda.is_available() else torch.device("cpu")
     set_seed(args.seed)
