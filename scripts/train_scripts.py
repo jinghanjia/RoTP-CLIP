@@ -4,15 +4,20 @@ import shutil
 import time
 import os 
 
-def gen_commands_lamb(dataset):
+def gen_commands_lamb(dataset,no_template=False):
     commands = []
     os.makedirs('logs', exist_ok=True)
-    cnt_prompts = [1,2,5,10]
-    lambs = [0.0,0.1,1.0,0.5,5.0]
+    cnt_prompts = [5,10]
+    lambs = [10.0,20.0,50.0]
     for lamb in lambs:
         for cnt_prompt in cnt_prompts:
             command = f"python -u experiments/clip/TP_training.py --cnt-prompt {cnt_prompt} --lamb {lamb} --dataset {dataset} | tee logs/{lamb}_{cnt_prompt}.log"
             commands.append(command)
+    if no_template:
+        for lamb in lambs:
+            for cnt_prompt in cnt_prompts:
+                command=f"python -u experiments/clip/TP_training.py --cnt-prompt {cnt_prompt+6} --lamb {lamb} --dataset {dataset} --template | tee logs/{lamb}_{cnt_prompt}_no_template.log"
+                commands.append(command)
     return commands
 
 def run_commands(gpus, commands, call=False, dir="commands", shuffle=True, delay=0.5):
@@ -50,7 +55,7 @@ if __name__ == "__main__":
     # run_commands(list(range(8)) * 4, commands, call=False,
     #              dir="commands_RL", shuffle=False, delay=0.5)
     # commands = gen_commands_debug_fisher()
-    commands = gen_commands_lamb("cifar10")
+    commands = gen_commands_lamb("cifar10",True)
     print(len(commands))
-    run_commands(list(range(20)), commands, call=True,
+    run_commands(list(range(12)), commands, call=True,
                  dir="commands", shuffle=False, delay=0.5)
