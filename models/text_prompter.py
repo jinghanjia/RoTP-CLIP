@@ -42,7 +42,8 @@ class Text_Prompter(nn.Module):
         self.class_wise_prompt = class_wise_prompt
         if class_wise_prompt:
             prompt_embedding = torch.empty(self.n_cls,n_cnt_prompt, clip_width, dtype=dtype).to(device)
-        prompt_embedding = torch.empty(n_cnt_prompt, clip_width, dtype=dtype).to(device)
+        else:
+            prompt_embedding = torch.empty(n_cnt_prompt, clip_width, dtype=dtype).to(device)
         nn.init.normal_(prompt_embedding, std=0.02)
         self.prompt = nn.Parameter(prompt_embedding)  # to be optimized
         templates = [prefix.format(classname) for classname in classnames]
