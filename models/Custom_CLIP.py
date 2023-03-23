@@ -26,9 +26,9 @@ def create_logits(x1, x2, logit_scale):
     return logits_per_x1, logits_per_x2
 
 class CustomCLIP(nn.Module):
-    def __init__(self, args, classnames, clip_model,prefix):
+    def __init__(self, args, classnames, clip_model,prefix,class_wise_prompt=False):
         super().__init__()
-        self.prompt_learner = Text_Prompter(args, classnames, clip_model,prefix)
+        self.prompt_learner = Text_Prompter(args, classnames, clip_model,prefix,class_wise_prompt)
         self.tokenized_prompts = self.prompt_learner.tokenized_prompts
         self.image_encoder = clip_model.visual
         self.text_encoder = TextEncoder(clip_model)

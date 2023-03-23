@@ -29,7 +29,7 @@ if __name__ == '__main__':
     ################# attack settings ###################
     p.add_argument('--n-restarts', type=int, default=1)
     p.add_argument('--attack-iters', type=int, default=2)
-    p.add_argument('--attack-eps', default=8., type=float,
+    p.add_argument('--attack-eps', default=1., type=float,
                         help='attack constraint for training (default: 8/255)')
     p.add_argument('--attack_lr', default=2., type=float,
                         help='attack learning rate (default: 2./255). Note this parameter is for training only. The attack lr is always set to attack_eps / 4 when evaluating.')    
@@ -38,7 +38,7 @@ if __name__ == '__main__':
     p.add_argument('--attack-methods', type=str, choices=['pgd', 'cw'],default='pgd')
 
     ################# text prompting settings ###################
-    p.add_argument('--cnt-prompt', type=int, default=10)
+    p.add_argument('--cnt-prompt', type=int, default=0)
     args = p.parse_args()
 
     device = torch.device("cuda:0") if torch.cuda.is_available() else torch.device("cpu")

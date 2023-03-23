@@ -144,6 +144,7 @@ if __name__ == '__main__':
                         default=50, help='epochs') 
     p.add_argument('--lamb', type=float,default=0.1)
     p.add_argument('--template', action='store_true',help='whether using a template')
+    p.add_argument('--cwp', action='store_true',help='whether using class-wise')
     args = p.parse_args()
     device = torch.device("cuda:0") if torch.cuda.is_available() else torch.device("cpu")
     set_seed(args.seed)
@@ -176,7 +177,7 @@ if __name__ == '__main__':
     else:
         prefix = ""
     loaders, class_names = prepare_clip_data(dataset=args.dataset, data_path=data_path, preprocess=preprocess)
-    model = CustomCLIP(args,class_names,model,prefix=prefix)   
+    model = CustomCLIP(args,class_names,model,prefix=prefix,class_wise_prompt=args.cwp)   
     # txt_emb = torch.cat(get_saparate_text_embedding(class_names, templates, model))
     # emb_names = np.array([f"T{i//len(class_names)} {class_names[i%len(class_names)]}" for i in range(txt_emb.size(0))])
 

@@ -11,12 +11,12 @@ def gen_commands_lamb(dataset,no_template=False):
     lambs = [10.0,20.0,50.0]
     for lamb in lambs:
         for cnt_prompt in cnt_prompts:
-            command = f"python -u experiments/clip/TP_training.py --cnt-prompt {cnt_prompt} --lamb {lamb} --dataset {dataset} | tee logs/{lamb}_{cnt_prompt}.log"
+            command = f"python -u experiments/clip/TP_training.py --cnt-prompt {cnt_prompt} --lamb {lamb} --dataset {dataset} --template  | tee logs/{lamb}_{cnt_prompt}_no_template.log"
             commands.append(command)
     if no_template:
         for lamb in lambs:
             for cnt_prompt in cnt_prompts:
-                command=f"python -u experiments/clip/TP_training.py --cnt-prompt {cnt_prompt+6} --lamb {lamb} --dataset {dataset} --template | tee logs/{lamb}_{cnt_prompt}_no_template.log"
+                command=f"python -u experiments/clip/TP_training.py --cnt-prompt {cnt_prompt+6} --lamb {lamb} --dataset {dataset} | tee logs/{lamb}_{cnt_prompt}.log"
                 commands.append(command)
     return commands
 
