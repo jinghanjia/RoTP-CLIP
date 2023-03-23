@@ -10,3 +10,9 @@ python -u experiments/clip/TP_training.py \
 | tee logs/10.0_5.log
 ```
 
+```
+python -u experiments/clip/TP_standard_training.py \
+--cnt-prompt 5 \
+--dataset cifar10 \
+| tee logs/standard_training_5.log
+```
